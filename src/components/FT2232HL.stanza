@@ -9,6 +9,7 @@ defpackage FTDI/components/FT2232HL :
   import jsl/symbols
   import jsl/landpatterns
 
+;Bus configuration mode selection enum
 public pcb-enum FTDI/components/FT2232HL/FT2232H-Mode :
   FT2232H-RS232
   FT2232H-MPSSE
@@ -123,62 +124,56 @@ public pcb-component component () :
 public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode) :
 
   port GND : pin
-  port VCORE : pin
-  port VCCIO : pin
+  port VCORE : power
+  port VCCIO : power
   port USB : usb-data
 
   public inst C : component()
 
+  net (GND VCORE.V- VCCIO.V-)
   for p in pins(C.GND) do :
     net (GND p)
 
   for p in pins(C.VCORE) do :
-    net (VCORE p)
+    net (VCORE.V+ p)
 
   for p in pins(C.VCCIO) do :
-    net (VCCIO p)
+    net (VCCIO.V+ p)
 
-  net (self.USB.data.P C.DP)
-  net (self.USB.data.N C.DM)
+  net (USB.data.P C.DP)
+  net (USB.data.N C.DM)
 
-  val uart-b = uart(UART-TX UART-RX UART-RTS UART-CTS)
+  make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
+  make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
 
-  switch(mode-a) :
+defn make-bus-supports (bus-d:Pin, bus-c:Pin, mode:FT2232H-Mode) -> False :
+  switch(mode) :
     FT2232H-RS232 :
-      supports uart-b :
-        uart-b.tx  => C.ADBUS[0]
-        uart-b.rx  => C.ADBUS[1]
-        uart-b.rts => C.ADBUS[2]
-        uart-b.cts => C.ADBUS[3]
+      make-uart-support(bus-d)
     FT2232H-MPSSE :
-      supports jtag :
-        jtag.tck => C.ADBUS[0]
-        jtag.tdi => C.ADBUS[1]
-        jtag.tdo => C.ADBUS[2]
-        jtag.tms => C.ADBUS[3]
-      for i in 4 to 8 do :
-        supports gpio :
-          gpio.gpio => C.ADBUS[i]
-      for i in 0 to 8 do :
-        supports gpio :
-          gpio.gpio => C.ACBUS[i]
+      make-jtag-support(bus-d, bus-c)
 
-  switch(mode-b) :
-    FT2232H-RS232 :
-      supports uart-b :
-        uart-b.tx  => C.BDBUS[0]
-        uart-b.rx  => C.BDBUS[1]
-        uart-b.rts => C.BDBUS[2]
-        uart-b.cts => C.BDBUS[3]
-    FT2232H-MPSSE :
-      supports jtag :
-        jtag.tck => C.BDBUS[0]
-        jtag.tdi => C.BDBUS[1]
-        jtag.tdo => C.BDBUS[2]
-        jtag.tms => C.BDBUS[3]
-      for i in 4 to 8 do :
-        supports gpio :
-          gpio.gpio => C.BDBUS[i]
-      for i in 0 to 8 do :
-        supports gpio :
-          gpio.gpio => C.BCBUS[i]
+;Basic UART bundle with 4 pins
+val uart-b = uart(UART-TX UART-RX UART-RTS UART-CTS)
+
+defn make-uart-support (bus-d:Pin) -> False :
+  inside pcb-module :
+    supports uart-b :
+      uart-b.tx  => bus-d[0]
+      uart-b.rx  => bus-d[1]
+      uart-b.rts => bus-d[2]
+      uart-b.cts => bus-d[3]
+
+defn make-jtag-support (bus-d:Pin, bus-c:Pin) -> False :
+  inside pcb-module :
+    supports jtag :
+      jtag.tck => bus-d[0]
+      jtag.tdi => bus-d[1]
+      jtag.tdo => bus-d[2]
+      jtag.tms => bus-d[3]
+    for i in 4 to 8 do :
+      supports gpio :
+        gpio.gpio => bus-d[i]
+    for i in 0 to 8 do :
+      supports gpio :
+        gpio.gpio => bus-c[i]
