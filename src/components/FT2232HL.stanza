@@ -4,8 +4,14 @@ defpackage FTDI/components/FT2232HL :
   import jitx
   import jitx/commands
 
+  import jsl/bundles
+  import jsl/protocols/usb
   import jsl/symbols
   import jsl/landpatterns
+
+public pcb-enum FTDI/components/FT2232HL/FT2232H-Mode :
+  FT2232H-RS232
+  FT2232H-MPSSE
 
 public pcb-component component () :
 
@@ -15,72 +21,86 @@ public pcb-component component () :
   reference-prefix = "U"
 
   pin-properties:
-    [ pin:Ref | pads:Int ... | side:Dir | row:Int | column:Int ]
-    [ GND     | 1 5 11 15 25
-                35 47 51     | Down     | -       | -          ]
-    [ AGND    | 10           | Down     | -       | -          ]
+    [ pin:Ref  | pads:Int ... | bank:Int | side:Dir ]
+    [ GND[0]   | 1            | 0        | Down     ]
+    [ GND[1]   | 5            | 0        | Down     ]
+    [ GND[2]   | 11           | 0        | Down     ]
+    [ GND[3]   | 15           | 0        | Down     ]
+    [ GND[4]   | 25           | 0        | Down     ]
+    [ GND[5]   | 35           | 0        | Down     ]
+    [ GND[6]   | 47           | 0        | Down     ]
+    [ GND[7]   | 51           | 0        | Down     ]
+    [ AGND     | 10           | 0        | Down     ]
 
-    [ VCORE   | 12 37 64     | Up       | -       | -          ]
-    [ VCCIO   | 20 31 42 56  | Up       | -       | -          ]
-    [ VPLL    | 9            | Up       | -       | -          ]
-    [ VPHY    | 4            | Up       | -       | -          ]
+    [ VCORE[0] | 12           | 0        | Up       ]
+    [ VCORE[1] | 37           | 0        | Up       ]
+    [ VCORE[2] | 64           | 0        | Up       ]
+    [ VCCIO[0] | 20           | 0        | Up       ]
+    [ VCCIO[1] | 31           | 0        | Up       ]
+    [ VCCIO[2] | 42           | 0        | Up       ]
+    [ VCCIO[3] | 56           | 0        | Up       ]
+    [ VPLL     | 9            | 0        | Up       ]
+    [ VPHY     | 4            | 0        | Up       ]
 
-    [ VREGIN  | 50           | Left     | 0       | -          ]
-    [ VREGOUT | 49           | Left     | 0       | -          ]
-    [ DM      | 7            | Left     | 1       | -          ]
-    [ DP      | 8            | Left     | 1       | -          ]
-    [ REF     | 6            | Left     | 1       | -          ]
-    [ RESET   | 14           | Left     | 1       | -          ]
-    [ EECS    | 63           | Left     | 2       | -          ]
-    [ EECLK   | 62           | Left     | 2       | -          ]
-    [ EEDATA  | 61           | Left     | 2       | -          ]
-    [ OSCI    | 2            | Left     | 3       | -          ]
-    [ OSCO    | 3            | Left     | 3       | -          ]
-    [ TEST    | 13           | Left     | 4       | -          ]
+    [ VREGIN   | 50           | 0        | Left     ]
+    [ VREGOUT  | 49           | 0        | Left     ]
+    [ DM       | 7            | 0        | Left     ]
+    [ DP       | 8            | 0        | Left     ]
+    [ REF      | 6            | 0        | Left     ]
+    [ RESET    | 14           | 0        | Left     ]
+    [ EECS     | 63           | 0        | Left     ]
+    [ EECLK    | 62           | 0        | Left     ]
+    [ EEDATA   | 61           | 0        | Left     ]
+    [ OSCI     | 2            | 0        | Left     ]
+    [ OSCO     | 3            | 0        | Left     ]
+    [ TEST     | 13           | 0        | Left     ]
 
-    [ ADBUS0  | 16           | Right    | 0       | -          ]
-    [ ADBUS1  | 17           | Right    | 0       | -          ]
-    [ ADBUS2  | 18           | Right    | 0       | -          ]
-    [ ADBUS3  | 19           | Right    | 0       | -          ]
-    [ ADBUS4  | 21           | Right    | 0       | -          ]
-    [ ADBUS5  | 22           | Right    | 0       | -          ]
-    [ ADBUS6  | 23           | Right    | 0       | -          ]
-    [ ADBUS7  | 24           | Right    | 0       | -          ]
+    [ PWREN    | 60           | 0        | Right    ]
+    [ SUSPEND  | 36           | 0        | Right    ]
 
-    [ ACBUS0  | 26           | Right    | 1       | -          ]
-    [ ACBUS1  | 27           | Right    | 1       | -          ]
-    [ ACBUS2  | 28           | Right    | 1       | -          ]
-    [ ACBUS3  | 29           | Right    | 1       | -          ]
-    [ ACBUS4  | 30           | Right    | 1       | -          ]
-    [ ACBUS5  | 32           | Right    | 1       | -          ]
-    [ ACBUS6  | 33           | Right    | 1       | -          ]
-    [ ACBUS7  | 34           | Right    | 1       | -          ]
+    [ ADBUS[0] | 16           | 1        | Left     ]
+    [ ADBUS[1] | 17           | 1        | Left     ]
+    [ ADBUS[2] | 18           | 1        | Left     ]
+    [ ADBUS[3] | 19           | 1        | Left     ]
+    [ ADBUS[4] | 21           | 1        | Left     ]
+    [ ADBUS[5] | 22           | 1        | Left     ]
+    [ ADBUS[6] | 23           | 1        | Left     ]
+    [ ADBUS[7] | 24           | 1        | Left     ]
 
-    [ BDBUS0  | 38           | Right    | 2       | -          ]
-    [ BDBUS1  | 39           | Right    | 2       | -          ]
-    [ BDBUS2  | 40           | Right    | 2       | -          ]
-    [ BDBUS3  | 41           | Right    | 2       | -          ]
-    [ BDBUS4  | 43           | Right    | 2       | -          ]
-    [ BDBUS5  | 44           | Right    | 2       | -          ]
-    [ BDBUS6  | 45           | Right    | 2       | -          ]
-    [ BDBUS7  | 46           | Right    | 2       | -          ]
+    [ ACBUS[0] | 26           | 1        | Right    ]
+    [ ACBUS[1] | 27           | 1        | Right    ]
+    [ ACBUS[2] | 28           | 1        | Right    ]
+    [ ACBUS[3] | 29           | 1        | Right    ]
+    [ ACBUS[4] | 30           | 1        | Right    ]
+    [ ACBUS[5] | 32           | 1        | Right    ]
+    [ ACBUS[6] | 33           | 1        | Right    ]
+    [ ACBUS[7] | 34           | 1        | Right    ]
 
-    [ BCBUS0  | 48           | Right    | 3       | -          ]
-    [ BCBUS1  | 52           | Right    | 3       | -          ]
-    [ BCBUS2  | 53           | Right    | 3       | -          ]
-    [ BCBUS3  | 54           | Right    | 3       | -          ]
-    [ BCBUS4  | 55           | Right    | 3       | -          ]
-    [ BCBUS5  | 57           | Right    | 3       | -          ]
-    [ BCBUS6  | 58           | Right    | 3       | -          ]
-    [ BCBUS7  | 59           | Right    | 3       | -          ]
+    [ BDBUS[0] | 38           | 2        | Left     ]
+    [ BDBUS[1] | 39           | 2        | Left     ]
+    [ BDBUS[2] | 40           | 2        | Left     ]
+    [ BDBUS[3] | 41           | 2        | Left     ]
+    [ BDBUS[4] | 43           | 2        | Left     ]
+    [ BDBUS[5] | 44           | 2        | Left     ]
+    [ BDBUS[6] | 45           | 2        | Left     ]
+    [ BDBUS[7] | 46           | 2        | Left     ]
 
-    [ PWREN   | 60           | Right    | 4       | -          ]
-    [ SUSPEND | 36           | Right    | 4       | -          ]
+    [ BCBUS[0] | 48           | 2        | Right    ]
+    [ BCBUS[1] | 52           | 2        | Right    ]
+    [ BCBUS[2] | 53           | 2        | Right    ]
+    [ BCBUS[3] | 54           | 2        | Right    ]
+    [ BCBUS[4] | 55           | 2        | Right    ]
+    [ BCBUS[5] | 57           | 2        | Right    ]
+    [ BCBUS[6] | 58           | 2        | Right    ]
+    [ BCBUS[7] | 59           | 2        | Right    ]
 
 
   val box = BoxSymbol(self)
-  set-grid(box, [5, 3])
-  assign-symbol $ create-symbol(box)
+  assign-symbols(
+    0 => box
+    1 => box
+    2 => box
+    )
 
   val pkg = QFP(
     num-leads = 64,
@@ -100,6 +120,65 @@ public pcb-component component () :
 
   assign-landpattern $ create-landpattern(pkg)
 
-public pcb-module device () :
+public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode) :
+
+  port GND : pin
+  port VCORE : pin
+  port VCCIO : pin
+  port USB : usb-data
 
   public inst C : component()
+
+  for p in pins(C.GND) do :
+    net (GND p)
+
+  for p in pins(C.VCORE) do :
+    net (VCORE p)
+
+  for p in pins(C.VCCIO) do :
+    net (VCCIO p)
+
+  net (self.USB.data.P C.DP)
+  net (self.USB.data.N C.DM)
+
+  val uart-b = uart(UART-TX UART-RX UART-RTS UART-CTS)
+
+  switch(mode-a) :
+    FT2232H-RS232 :
+      supports uart-b :
+        uart-b.tx  => C.ADBUS[0]
+        uart-b.rx  => C.ADBUS[1]
+        uart-b.rts => C.ADBUS[2]
+        uart-b.cts => C.ADBUS[3]
+    FT2232H-MPSSE :
+      supports jtag :
+        jtag.tck => C.ADBUS[0]
+        jtag.tdi => C.ADBUS[1]
+        jtag.tdo => C.ADBUS[2]
+        jtag.tms => C.ADBUS[3]
+      for i in 4 to 8 do :
+        supports gpio :
+          gpio.gpio => C.ADBUS[i]
+      for i in 0 to 8 do :
+        supports gpio :
+          gpio.gpio => C.ACBUS[i]
+
+  switch(mode-b) :
+    FT2232H-RS232 :
+      supports uart-b :
+        uart-b.tx  => C.BDBUS[0]
+        uart-b.rx  => C.BDBUS[1]
+        uart-b.rts => C.BDBUS[2]
+        uart-b.cts => C.BDBUS[3]
+    FT2232H-MPSSE :
+      supports jtag :
+        jtag.tck => C.BDBUS[0]
+        jtag.tdi => C.BDBUS[1]
+        jtag.tdo => C.BDBUS[2]
+        jtag.tms => C.BDBUS[3]
+      for i in 4 to 8 do :
+        supports gpio :
+          gpio.gpio => C.BDBUS[i]
+      for i in 0 to 8 do :
+        supports gpio :
+          gpio.gpio => C.BCBUS[i]
