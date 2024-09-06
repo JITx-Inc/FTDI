@@ -3,11 +3,15 @@ defpackage FTDI/components/FT2232HL :
   import core
   import jitx
   import jitx/commands
+  import jitx/parts
 
   import jsl/bundles
   import jsl/protocols/usb
   import jsl/symbols
   import jsl/landpatterns
+  import jsl/circuits/utils
+  import jsl/symbols/net-symbols
+  import jsl/circuits/Network
 
 ;Bus configuration mode selection enum
 public pcb-enum FTDI/components/FT2232HL/FT2232H-Mode :
@@ -23,41 +27,22 @@ public pcb-component component () :
 
   pin-properties:
     [ pin:Ref  | pads:Int ... | bank:Int | side:Dir | row:Int | column:Int ]
-    [ GND[0]   | 1            | 0        | Down     | -       | -          ]
-    [ GND[1]   | 5            | 0        | Down     | -       | -          ]
-    [ GND[2]   | 11           | 0        | Down     | -       | -          ]
-    [ GND[3]   | 15           | 0        | Down     | -       | -          ]
-    [ GND[4]   | 25           | 0        | Down     | -       | -          ]
-    [ GND[5]   | 35           | 0        | Down     | -       | -          ]
-    [ GND[6]   | 47           | 0        | Down     | -       | -          ]
-    [ GND[7]   | 51           | 0        | Down     | -       | -          ]
-    [ AGND     | 10           | 0        | Down     | -       | -          ]
 
-    [ VCORE[0] | 12           | 0        | Up       | -       | -          ]
-    [ VCORE[1] | 37           | 0        | Up       | -       | -          ]
-    [ VCORE[2] | 64           | 0        | Up       | -       | -          ]
-    [ VCCIO[0] | 20           | 0        | Up       | -       | -          ]
-    [ VCCIO[1] | 31           | 0        | Up       | -       | -          ]
-    [ VCCIO[2] | 42           | 0        | Up       | -       | -          ]
-    [ VCCIO[3] | 56           | 0        | Up       | -       | -          ]
-    [ VPLL     | 9            | 0        | Up       | -       | -          ]
-    [ VPHY     | 4            | 0        | Up       | -       | -          ]
+    [ VREGIN   | 50           | 0        | Right    | 0       | -          ]
+    [ VREGOUT  | 49           | 0        | Right    | 0       | -          ]
+    [ DP       | 8            | 0        | Left     | 0       | -          ]
+    [ DM       | 7            | 0        | Left     | 0       | -          ]
+    [ REF      | 6            | 0        | Right    | 3       | -          ]
+    [ RESET_n  | 14           | 0        | Left     | 1       | -          ]
+    [ EECS     | 63           | 0        | Right    | 1       | -          ]
+    [ EECLK    | 62           | 0        | Right    | 1       | -          ]
+    [ EEDATA   | 61           | 0        | Right    | 1       | -          ]
+    [ OSCI     | 2            | 0        | Left     | 2       | -          ]
+    [ OSCO     | 3            | 0        | Left     | 2       | -          ]
+    [ TEST     | 13           | 0        | Left     | 3       | -          ]
 
-    [ VREGIN   | 50           | 0        | Left     | 0       | -          ]
-    [ VREGOUT  | 49           | 0        | Left     | 0       | -          ]
-    [ DM       | 7            | 0        | Left     | 1       | -          ]
-    [ DP       | 8            | 0        | Left     | 1       | -          ]
-    [ REF      | 6            | 0        | Left     | 1       | -          ]
-    [ RESET    | 14           | 0        | Left     | 1       | -          ]
-    [ EECS     | 63           | 0        | Left     | 2       | -          ]
-    [ EECLK    | 62           | 0        | Left     | 2       | -          ]
-    [ EEDATA   | 61           | 0        | Left     | 2       | -          ]
-    [ OSCI     | 2            | 0        | Left     | 3       | -          ]
-    [ OSCO     | 3            | 0        | Left     | 3       | -          ]
-    [ TEST     | 13           | 0        | Left     | 4       | -          ]
-
-    [ PWREN    | 60           | 0        | Right    | 2       | -          ]
-    [ SUSPEND  | 36           | 0        | Right    | 2       | -          ]
+    [ PWREN_n  | 60           | 0        | Right    | 2       | -          ]
+    [ SUSPEND_n  | 36           | 0        | Right    | 2       | -          ]
 
     [ ADBUS[0] | 16           | 1        | Left     | -       | -          ]
     [ ADBUS[1] | 17           | 1        | Left     | -       | -          ]
@@ -95,12 +80,44 @@ public pcb-component component () :
     [ BCBUS[6] | 58           | 2        | Right    | -       | -          ]
     [ BCBUS[7] | 59           | 2        | Right    | -       | -          ]
 
+    [ GND[0]   | 1            | 3        | Left     | -       | -          ]
+    [ GND[1]   | 5            | 3        | Left     | -       | -          ]
+    [ GND[2]   | 11           | 3        | Left     | -       | -          ]
+    [ GND[3]   | 15           | 3        | Left     | -       | -          ]
+    [ GND[4]   | 25           | 3        | Left     | -       | -          ]
+    [ GND[5]   | 35           | 3        | Left     | -       | -          ]
+    [ GND[6]   | 47           | 3        | Left     | -       | -          ]
+    [ GND[7]   | 51           | 3        | Left     | -       | -          ]
+    [ AGND     | 10           | 3        | Left     | -       | -          ]
+
+    [ VCORE[0] | 12           | 3        | Right    | -       | -          ]
+    [ VCORE[1] | 37           | 3        | Right    | -       | -          ]
+    [ VCORE[2] | 64           | 3        | Right    | -       | -          ]
+    [ VCCIO[0] | 20           | 3        | Right    | -       | -          ]
+    [ VCCIO[1] | 31           | 3        | Right    | -       | -          ]
+    [ VCCIO[2] | 42           | 3        | Right    | -       | -          ]
+    [ VCCIO[3] | 56           | 3        | Right    | -       | -          ]
+    [ VPLL     | 9            | 3        | Right    | -       | -          ]
+    [ VPHY     | 4            | 3        | Right    | -       | -          ]
+
+
   val box = BoxSymbol(self)
-  set-grid(box, [5, 1], 0)
+  set-grid(box, [4, 2], 0)
+  set-head-margin(0.5, self.VCCIO[0])
+  set-head-margin(0.5, self.VPLL)
+  set-alignment(S, self.GND, self.AGND)
+
+  val card-size = Dims(0.4, 0.3)
+  add-decorator(box, self.SUSPEND_n, CardinalityDecorator(OutputPin, size = card-size))
+  add-decorator(box, self.PWREN_n, CardinalityDecorator(OutputPin, size = card-size))
+  add-decorator(box, self.RESET_n, CardinalityDecorator(InputPin, size = card-size))
+
+
   assign-symbols(
     0 => box
     1 => box
     2 => box
+    3 => box
     )
 
   val pkg = QFP(
@@ -121,30 +138,141 @@ public pcb-component component () :
 
   assign-landpattern $ create-landpattern(pkg)
 
-public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode) :
+
+; Hardware User Guide:
+; https://ftdichip.com/wp-content/uploads/2020/08/AN_146_USB_Hardware_Design_Guidelines_for_FTDI_ICs.pdf
+
+doc: \<DOC>
+
+@param use-internal-1v8 This flag indicates whether the internal
+voltage register will be used to create the 1.8V rail for VCORE.
+If `true`, the module will create the necessary connections and
+capacitors to drive `VCORE` from `VREGOUT`. THe input to the
+regulator will be derived from the `VCCIO` power input.
+If `false`, then the user is expected to drive `VCORE` to provide
+a 1.8V rail.
+<DOC>
+public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v8:True|False = true) :
 
   port GND : pin
   port VCORE : power
   port VCCIO : power
+  port VPLL : power
+  port VPHY : power
+
   port USB : usb-data
 
   public inst C : component()
 
-  net (GND VCORE.V- VCCIO.V-)
+  if mode-b != FT2232H-MPSSE:
+    ; Power Save Port
+    ;  This port is only available if we don't use `MPSSE` mode
+    ;  for Port B.
+
+    port PWRSAV
+    net (PWRSAV, C.BCBUS[7])
+
+  net (GND VCORE.V- VCCIO.V-, VPLL.V-, VPHY.V-)
   for p in pins(C.GND) do :
     net (GND p)
 
-  for p in pins(C.VCORE) do :
-    net (VCORE.V+ p)
+  net (GND, C.AGND)
 
+  net rail-3v3 (VCCIO.V+)
+  val VCCIO-V = 3.3
   for p in pins(C.VCCIO) do :
-    net (VCCIO.V+ p)
+    net (rail-3v3 p)
+
+  net rail-1v8 (VCORE.V+)
+  val VCORE-V = 1.8
+  for p in pins(C.VCORE) do :
+    net (rail-1v8 p)
+
+  net (VPLL.V+, C.VPLL)
+  net (VPHY.V+, C.VPHY)
 
   net (USB.data.P C.DP)
   net (USB.data.N C.DM)
 
   make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
   make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
+
+
+  ; The REF pin tunes the internal transceiver
+  ;   this resistor sets the current used.
+  insert-resistor(
+    C.REF, GND,
+    resistance = 12.0e3
+    precision = (1 %)
+  )
+
+  ; Setup Bypass Capacitors for Rails
+
+  ; Voltage Margin Relative to the intended voltage.
+  ;  This helps set the minimum voltage range to search.
+  val cap-margin = 2.0
+
+  ; Set a maximum voltage search range for components -
+  ;  this just limits the search range to something reasonable
+  ;  for low voltage devices like this.
+  val max-voltage = 16.0
+
+  ; See Section 6.2 -
+
+  val bypass-query = CapacitorQuery(
+    type = "ceramic",
+    temperature-coefficient_code = "X7R",
+    precision = (10 %)
+    sort! = SortKey(rated-voltage = Increasing)
+  )
+
+  val cap-100nF = create-capacitor(
+      bypass-query,
+      capacitance = 100.0e-9,
+      rated-voltage = AtLeast(cap-margin * VCCIO-V)
+  )
+
+  if use-internal-1v8 :
+    ; Use the internal VREG to drive VCORE
+    net (rail-3v3, C.VREGIN)
+    inst C-in : cap-100nF
+    bypass(C-in, C.VREGIN, GND)
+
+    net (rail-1v8, C.VREGOUT)
+    val C-out = insert-capacitor(
+      C.VREGOUT, GND,
+      bypass-query,
+      capacitance = 3.3e-6
+      rated-voltage = AtLeast(cap-margin * VCORE-V)
+      short-trace? = ShortTraceAnode
+    )
+    schematic-group([C-in, C-out]) = VREG-caps
+    symbol(rail-1v8) = PWR-SYMB
+
+  ; Rail Bypass Capacitors
+  val vcore-set = pins(C.VCORE)
+  inst C-vcore : cap-100nF[length(vcore-set)]
+  for (p in vcore-set, i in 0 to false) do :
+    bypass(C-vcore[i] as Instance, p, GND)
+
+  val vccio-set = pins(C.VCCIO)
+  inst C-vccio : cap-100nF[length(vccio-set)]
+  for (p in vccio-set, i in 0 to false) do :
+    bypass(C-vccio[i] as Instance, p, GND)
+
+  schematic-group([C-vcore, C-vccio]) = bypass-caps
+
+  val cap-4u7 = Elem $ create-capacitor(
+    bypass-query,
+    capacitance = 4.7e-6,
+    rated-voltage = AtLeast(cap-margin * VCCIO-V)
+  )
+
+  val bypass-circ = create-circuit(cap-4u7 | Elem(cap-100nF))
+  inst PHY-bypass : bypass-circ
+  bypass(PHY-bypass, C.VPHY, GND)
+  inst PLL-bypass : bypass-circ
+  bypass(PLL-bypass, C.VPLL, GND)
 
 defn make-bus-supports (bus-d:Pin, bus-c:Pin, mode:FT2232H-Mode) -> False :
   switch(mode) :
@@ -177,3 +305,6 @@ defn make-jtag-support (bus-d:Pin, bus-c:Pin) -> False :
     for i in 0 to 8 do :
       supports gpio :
         gpio.gpio => bus-c[i]
+
+
+
