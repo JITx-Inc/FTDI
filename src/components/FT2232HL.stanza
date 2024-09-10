@@ -142,6 +142,22 @@ public pcb-component component () :
 ; Hardware User Guide:
 ; https://ftdichip.com/wp-content/uploads/2020/08/AN_146_USB_Hardware_Design_Guidelines_for_FTDI_ICs.pdf
 
+
+doc: \<DOC>
+FTDI Microwire Comms Bundle
+
+The FTDI chip has a restricted Microwire protocol
+interface with only 3 wires. It is a half-duplex style
+interface instead of the Microwire spec which is full-duplex.
+This bundle encodes this bus for easier code development -
+but is not intended to be a general purpose bundle.
+<DOC>
+public pcb-bundle FTDI-microwire :
+  port cs
+  port clk
+  port data
+
+
 doc: \<DOC>
 
 @param use-internal-1v8 This flag indicates whether the internal
@@ -161,6 +177,7 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   port VPHY : power
 
   port USB : usb-data
+  port cfg : FTDI-microwire
 
   public inst C : component()
 
@@ -197,6 +214,10 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
   make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
 
+  ; Wire up the microwire configuration bus
+  net (cfg.cs, C.EECS)
+  net (cfg.clk, C.EECLK)
+  net (cfg.data, C.EEDATA)
 
   ; The REF pin tunes the internal transceiver
   ;   this resistor sets the current used.
