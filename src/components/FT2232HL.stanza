@@ -8,10 +8,10 @@ defpackage FTDI/components/FT2232HL :
   import jsl/bundles
   import jsl/protocols/usb
   import jsl/symbols
-  import jsl/landpatterns
-  import jsl/circuits/utils
   import jsl/symbols/net-symbols
+  import jsl/landpatterns
   import jsl/circuits/Network
+  import jsl/circuits/Bypass
 
 ;Bus configuration mode selection enum
 public pcb-enum FTDI/components/FT2232HL/FT2232H-Mode :
@@ -256,32 +256,27 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   if use-internal-1v8 :
     ; Use the internal VREG to drive VCORE
     net (rail-3v3, C.VREGIN)
-    inst C-in : cap-100nF
-    bypass(C-in, C.VREGIN, GND)
+    val C-in = insert-bypass(C.VREGIN, GND, elem-type = cap-100nF)
 
     net (rail-1v8, C.VREGOUT)
-    val C-out = insert-capacitor(
-      C.VREGOUT, GND,
+    symbol(rail-1v8) = PWR-SYMB
+
+    val cap-3u3 = create-capacitor(
       bypass-query,
       capacitance = 3.3e-6
       rated-voltage = AtLeast(cap-margin * VCORE-V)
-      short-trace? = ShortTraceAnode
     )
+    val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-3u3)
     schematic-group([C-in, C-out]) = VREG-caps
-    symbol(rail-1v8) = PWR-SYMB
 
   ; Rail Bypass Capacitors
-  val vcore-set = pins(C.VCORE)
-  inst C-vcore : cap-100nF[length(vcore-set)]
-  for (p in vcore-set, i in 0 to false) do :
-    bypass(C-vcore[i] as Instance, p, GND)
+  for p in ports(C.VCORE) do :
+    val c = insert-bypass(p, GND, elem-type = cap-100nF)
+    schematic-group(c) = bypass-caps
 
-  val vccio-set = pins(C.VCCIO)
-  inst C-vccio : cap-100nF[length(vccio-set)]
-  for (p in vccio-set, i in 0 to false) do :
-    bypass(C-vccio[i] as Instance, p, GND)
-
-  schematic-group([C-vcore, C-vccio]) = bypass-caps
+  for p in ports(C.VCCIO) do :
+    val c = insert-bypass(p, GND, elem-type = cap-100nF)
+    schematic-group(c) = bypass-caps
 
   val cap-4u7 = Elem $ create-capacitor(
     bypass-query,
@@ -290,10 +285,8 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   )
 
   val bypass-circ = create-circuit(cap-4u7 | Elem(cap-100nF))
-  inst PHY-bypass : bypass-circ
-  bypass(PHY-bypass, C.VPHY, GND)
-  inst PLL-bypass : bypass-circ
-  bypass(PLL-bypass, C.VPLL, GND)
+  insert-bypass(C.VPHY, GND, elem-type = bypass-circ)
+  insert-bypass(C.VPLL, GND, elem-type = bypass-circ)
 
 defn make-bus-supports (bus-d:Pin, bus-c:Pin, mode:FT2232H-Mode) -> False :
   switch(mode) :
@@ -302,8 +295,8 @@ defn make-bus-supports (bus-d:Pin, bus-c:Pin, mode:FT2232H-Mode) -> False :
     FT2232H-MPSSE :
       make-jtag-support(bus-d, bus-c)
 
-;Basic UART bundle with 4 pins
-val uart-b = uart(UART-TX UART-RX UART-RTS UART-CTS)
+;Basic UART bundle with Flow Control
+val uart-b = uart-fc()
 
 defn make-uart-support (bus-d:Pin) -> False :
   inside pcb-module :
