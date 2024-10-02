@@ -6,6 +6,7 @@ defpackage FTDI/components/FT2232HL :
   import jitx/parts
 
   import jsl/bundles
+  import jsl/si/helpers
   import jsl/protocols/usb
   import jsl/symbols
   import jsl/symbols/net-symbols
@@ -208,8 +209,8 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   net (VPLL.V+, C.VPLL)
   net (VPHY.V+, C.VPHY)
 
-  net (USB.data.P C.DP)
-  net (USB.data.N C.DM)
+  topo-net(USB.data.P => C.DP)
+  topo-net(USB.data.N => C.DM)
 
   make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
   make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
