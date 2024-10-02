@@ -1,4 +1,4 @@
 name = "FTDI"
-version = "0.1.0"
+version = "0.2.0"
 [dependencies]
-jsl = { git = "JITx-Inc/jsl", version = "0.5.1" }
+jsl = { git = "JITx-Inc/jsl", version = "0.7.0" }
