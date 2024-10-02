@@ -6,6 +6,7 @@ defpackage FTDI/components/FT2232HL :
   import jitx/parts
 
   import jsl/bundles
+  import jsl/errors
   import jsl/si/helpers
   import jsl/protocols/usb
   import jsl/symbols
@@ -239,19 +240,25 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   ;  for low voltage devices like this.
   val max-voltage = 16.0
 
+  val max-rail-V = cap-margin * maximum([VCCIO-V, VCORE-V])
+  if max-rail-V > max-voltage:
+    throw $ ValueError("Invalid Max Voltage Range Configuration: rail-V = %_ < max-V = %_" % [max-rail-V, max-voltage])
+
   ; See Section 6.2 -
 
   val bypass-query = CapacitorQuery(
     type = "ceramic",
     temperature-coefficient_code = "X7R",
     precision = (10 %)
+    case = ["0603", "0805", "1206"]
     sort! = SortKey(rated-voltage = Increasing)
+    rated-voltage = Interval(max-rail-V, max-voltage)
   )
 
   val cap-100nF = create-capacitor(
       bypass-query,
       capacitance = 100.0e-9,
-      rated-voltage = AtLeast(cap-margin * VCCIO-V)
+      case = ["0402"]
   )
 
   if use-internal-1v8 :
@@ -265,7 +272,6 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
     val cap-3u3 = create-capacitor(
       bypass-query,
       capacitance = 3.3e-6
-      rated-voltage = AtLeast(cap-margin * VCORE-V)
     )
     val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-3u3)
     schematic-group([C-in, C-out]) = VREG-caps
@@ -282,7 +288,6 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
   val cap-4u7 = Elem $ create-capacitor(
     bypass-query,
     capacitance = 4.7e-6,
-    rated-voltage = AtLeast(cap-margin * VCCIO-V)
   )
 
   val bypass-circ = create-circuit(cap-4u7 | Elem(cap-100nF))
