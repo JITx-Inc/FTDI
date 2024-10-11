@@ -5,15 +5,8 @@ defpackage FTDI/components/FT2232HL :
   import jitx/commands
   import jitx/parts
 
-  import jsl/bundles
-  import jsl/errors
-  import jsl/si/helpers
-  import jsl/protocols/usb
-  import jsl/symbols
-  import jsl/symbols/net-symbols
-  import jsl/landpatterns
-  import jsl/circuits/Network
-  import jsl/circuits/Bypass
+  import jsl
+
 
 ;Bus configuration mode selection enum
 public pcb-enum FTDI/components/FT2232HL/FT2232H-Mode :
