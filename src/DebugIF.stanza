@@ -20,11 +20,11 @@ laptop.
 
 The `FT2232H` component is made accessible via the `ftdi`
 public child component. User should use pin assignment on this
-child directly to access UARTs, JTAG, GPIO, etc for their 
+child directly to access UARTs, JTAG, GPIO, etc for their
 specific application.
 
 @member VDD-3v3 Input voltage rail to support the USB Transceiver
-User is responsible for providing the 3.3V supply rail that 
+User is responsible for providing the 3.3V supply rail that
 supports the FTDI IC.
 @member VDD-USB Output voltage rail provided by the USB connector.
 This is a 5V rail by USB specification.
@@ -54,14 +54,13 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     port VDD-USB : power
 
     port USB : usb-data
-    port CFG : microwire-3wire()
+    port CFG : microwire-4()
 
     net GND (VDD-3v3.V-, VDD-USB.V-)
 
     public inst ftdi : FTDI/components/FT2232HL/device(mode-a, mode-b, use-internal-1v8 = true)
 
     net (VDD-3v3, ftdi.VCCIO)
-    net (CFG, ftdi.cfg)
     net (USB, ftdi.USB)
 
     ; Use ferrite filter on the VPLL and VPHY rails:
@@ -79,6 +78,23 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     ; Test pin we will to ground through a jumper to give us
     ;  options should we need it.
     insert-resistor(ftdi.C.TEST, GND, R-query-n, resistance = 0.0)
+
+    ; Configuration Interface
+    insert-pullup(CFG.cs, VDD-3v3)
+    insert-pullup(CFG.clk, VDD-3v3)
+    insert-pullup(CFG.do, VDD-3v3)
+
+    ; Connect a DO -> FTDI.EEDATA through a 2k resistor
+    ; See datasheet Section 7
+    insert-resistor(
+      CFG.di, CFG.do,
+      R-query-n
+      resistance = 2.0e3,
+    )
+
+    net (CFG.cs, ftdi.cfg.cs)
+    net (CFG.clk, ftdi.cfg.clk)
+    net (CFG.di, ftdi.cfg.do)
 
     ; Expose the UART and the JTAG to the system
     ;  so that we can use these for a debug/test interfaces
@@ -118,13 +134,13 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     ; Self-Powered - Reset for FTDI on Cable Connect
     ; See section 2.4.4 Figure 2.6 in the hardware design guide.
     ;
-    ; Assumes standard 5V power 
+    ; Assumes standard 5V power
     if self-powered-reset:
       val Vbus-V = 5.0
       inst R-t : create-resistor(R-query-n, resistance = 4.7e3)
       inst R-b : create-resistor(R-query-n, resistance = 10.0e3)
       inst C-b : create-capacitor(
-        C-query-n, 
+        C-query-n,
         capacitance = 1.0e-9,
         rated-voltage = AtLeast( Vbus-V * 2.0)
       )
