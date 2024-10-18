@@ -1,6 +1,6 @@
 name = "FTDI"
 version = "0.3.1"
 [dependencies]
-jsl = { git = "JITx-Inc/jsl", version = "0.8.0" }
+jsl = { git = "JITx-Inc/jsl", version = "0.8.1" }
 passives = { git = "JITx-Inc/passives", version = "0.1.0" }
 power-systems = { git = "JITx-Inc/power-systems", version = "0.5.0" }
