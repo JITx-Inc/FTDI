@@ -80,9 +80,9 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     insert-resistor(ftdi.C.TEST, GND, R-query-n, resistance = 0.0)
 
     ; Configuration Interface
-    insert-pullup(CFG.cs, VDD-3v3)
-    insert-pullup(CFG.clk, VDD-3v3)
-    insert-pullup(CFG.do, VDD-3v3)
+    insert-pullup(CFG.cs, VDD-3v3, qb? = R-query-n)
+    insert-pullup(CFG.clk, VDD-3v3, qb? = R-query-n)
+    insert-pullup(CFG.do, VDD-3v3, qb? = R-query-n)
 
     ; Connect a DO -> FTDI.EEDATA through a 2k resistor
     ; See datasheet Section 7
