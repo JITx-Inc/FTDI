@@ -31,22 +31,17 @@ This is a 5V rail by USB specification.
 @member USB USB 2.0 Interface - Expects high-speed signal integrity constraint.
 @member CFG 3-wire Microwire interface for the configuration EEPROM. This interface
 is optional.
+@param R-query Resistor Query Object for customizing resistor selection. Default is `get-default-resistor-query()`.
+@param C-query Capacitor Query Object for customizing capacitor selection. Default is `get-default-capacitor-query()`.
 <DOC>
-public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v8:True|False = true, self-powered-reset:True|False = true, R-query:ResistorQuery = ?, C-query:CapacitorQuery = ? ):
-
-  val C-query-n = match(C-query):
-    (_:None): CapacitorQuery(
-        type = "ceramic",
-        temperature-coefficient_code = "X7R",
-        precision = (10 %)
-      )
-    (given:One<CapacitorQuery>): value(given)
-
-  val R-query-n = match(R-query):
-    (_:None): ResistorQuery(
-        precision = (1 %)
-      )
-    (given:One<ResistorQuery>): value(given)
+public defn circuit (
+  mode-a:FT2232H-Mode,
+  mode-b:FT2232H-Mode --
+  use-internal-1v8:True|False = true,
+  self-powered-reset:True|False = true,
+  R-query:ResistorQuery = get-default-resistor-query(),
+  C-query:CapacitorQuery = get-default-capacitor-query()
+  ):
 
   pcb-module circuit-int :
 
@@ -58,7 +53,7 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
 
     net GND (VDD-3v3.V-, VDD-USB.V-)
 
-    public inst ftdi : FTDI/components/FT2232HL/device(mode-a, mode-b, use-internal-1v8 = true)
+    public inst ftdi : FTDI/components/FT2232HL/device(mode-a, mode-b, use-internal-1v8 = true, C-query = C-query)
 
     net (VDD-3v3, ftdi.VCCIO)
     net (USB, ftdi.USB)
@@ -77,18 +72,18 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
 
     ; Test pin we will to ground through a jumper to give us
     ;  options should we need it.
-    insert-resistor(ftdi.C.TEST, GND, R-query-n, resistance = 0.0)
+    insert-resistor(ftdi.C.TEST, GND, R-query, resistance = 0.0)
 
     ; Configuration Interface
-    insert-pullup(CFG.cs, VDD-3v3, qb? = R-query-n)
-    insert-pullup(CFG.clk, VDD-3v3, qb? = R-query-n)
-    insert-pullup(CFG.do, VDD-3v3, qb? = R-query-n)
+    insert-pullup(CFG.cs, VDD-3v3, qb? = R-query)
+    insert-pullup(CFG.clk, VDD-3v3, qb? = R-query)
+    insert-pullup(CFG.do, VDD-3v3, qb? = R-query)
 
     ; Connect a DO -> FTDI.EEDATA through a 2k resistor
     ; See datasheet Section 7
     insert-resistor(
       CFG.di, CFG.do,
-      R-query-n
+      R-query
       resistance = 2.0e3,
     )
 
@@ -127,7 +122,7 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     ; Add a series resistor for dampening if needed.
     insert-resistor(
       resonator.p[2], ftdi.C.OSCI,
-      R-query-n,
+      R-query,
       resistance = 0.0,
     )
 
@@ -137,10 +132,10 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
     ; Assumes standard 5V power
     if self-powered-reset:
       val Vbus-V = 5.0
-      inst R-t : create-resistor(R-query-n, resistance = 4.7e3)
-      inst R-b : create-resistor(R-query-n, resistance = 10.0e3)
+      inst R-t : create-resistor(R-query, resistance = 4.7e3)
+      inst R-b : create-resistor(R-query, resistance = 10.0e3)
       inst C-b : create-capacitor(
-        C-query-n,
+        C-query,
         capacitance = 1.0e-9,
         rated-voltage = AtLeast( Vbus-V * 2.0)
       )
@@ -151,7 +146,7 @@ public defn circuit (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v
 
       net (FTDI-reset, ftdi.C.RESET_n)
     else:
-      insert-resistor(VDD-USB.V+, ftdi.C.RESET_n, R-query-n, resistance = 10.0e3)
+      insert-resistor(VDD-USB.V+, ftdi.C.RESET_n, R-query, resistance = 10.0e3)
   ; Return the instantiable
   circuit-int
 
