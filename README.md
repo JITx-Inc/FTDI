@@ -22,8 +22,8 @@ Circuit Includes:
   inst debug-if : FTDI/DebugIF/circuit(
     FTDI/components/FT2232HL/FT2232H-MPSSE,
     FTDI/components/FT2232HL/FT2232H-RS232,
-    R-query = res-query,
-    C-query = cap-query
+    R-query = R-query,
+    C-query = C-query
     )
 ```
 ### Ports
