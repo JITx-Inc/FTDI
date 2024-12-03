@@ -146,8 +146,15 @@ capacitors to drive `VCORE` from `VREGOUT`. THe input to the
 regulator will be derived from the `VCCIO` power input.
 If `false`, then the user is expected to drive `VCORE` to provide
 a 1.8V rail.
+@param C-query Capacitor Query Object for customizing capacitor selection. Default is `get-default-capacitor-query()`.
 <DOC>
-public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-internal-1v8:True|False = true) :
+public pcb-module device (
+  mode-a:FT2232H-Mode,
+  mode-b:FT2232H-Mode
+  --
+  use-internal-1v8:True|False = true,
+  C-query:CapacitorQuery = get-default-capacitor-query()
+  ) :
 
   port GND : pin
   port VCORE : power
@@ -223,10 +230,7 @@ public pcb-module device (mode-a:FT2232H-Mode, mode-b:FT2232H-Mode -- use-intern
 
   ; See Section 6.2 -
 
-  val bypass-query = CapacitorQuery(
-    type = "ceramic",
-    temperature-coefficient_code = "X7R",
-    precision = (10 %)
+  val bypass-query = add(C-query,
     case = ["0603", "0805", "1206"]
     sort! = SortKey(rated-voltage = Increasing)
     rated-voltage = Interval(max-rail-V, max-voltage)
