@@ -148,132 +148,138 @@ If `false`, then the user is expected to drive `VCORE` to provide
 a 1.8V rail.
 @param C-query Capacitor Query Object for customizing capacitor selection. Default is `get-default-capacitor-query()`.
 <DOC>
-public pcb-module device (
+public defn device (
   mode-a:FT2232H-Mode,
   mode-b:FT2232H-Mode
   --
   use-internal-1v8:True|False = true,
+  R-query:ResistorQuery = get-default-resistor-query(),
   C-query:CapacitorQuery = get-default-capacitor-query()
-  ) :
+  ) -> Instantiable:
+  pcb-module device-int :
 
-  port GND : pin
-  port VCORE : power
-  port VCCIO : power
-  port VPLL : power
-  port VPHY : power
+    port GND : pin
+    port VCORE : power
+    port VCCIO : power
+    port VPLL : power
+    port VPHY : power
 
-  port USB : usb-data
-  port cfg : microwire-3wire()
+    port USB : usb-data
+    port cfg : microwire-3wire()
 
-  public inst C : component()
+    public inst C : component()
 
-  if mode-b != FT2232H-MPSSE:
-    ; Power Save Port
-    ;  This port is only available if we don't use `MPSSE` mode
-    ;  for Port B.
+    if mode-b != FT2232H-MPSSE:
+      ; Power Save Port
+      ;  This port is only available if we don't use `MPSSE` mode
+      ;  for Port B.
 
-    port PWRSAV
-    net (PWRSAV, C.BCBUS[7])
+      port PWRSAV
+      net (PWRSAV, C.BCBUS[7])
 
-  net (GND VCORE.V- VCCIO.V-, VPLL.V-, VPHY.V-)
-  for p in pins(C.GND) do :
-    net (GND p)
+    net (GND VCORE.V- VCCIO.V-, VPLL.V-, VPHY.V-)
+    for p in pins(C.GND) do :
+      net (GND p)
 
-  net (GND, C.AGND)
+    net (GND, C.AGND)
 
-  net rail-3v3 (VCCIO.V+)
-  val VCCIO-V = 3.3
-  for p in pins(C.VCCIO) do :
-    net (rail-3v3 p)
+    net rail-3v3 (VCCIO.V+)
+    val VCCIO-V = 3.3
+    for p in pins(C.VCCIO) do :
+      net (rail-3v3 p)
 
-  net rail-1v8 (VCORE.V+)
-  val VCORE-V = 1.8
-  for p in pins(C.VCORE) do :
-    net (rail-1v8 p)
+    net rail-1v8 (VCORE.V+)
+    val VCORE-V = 1.8
+    for p in pins(C.VCORE) do :
+      net (rail-1v8 p)
 
-  net (VPLL.V+, C.VPLL)
-  net (VPHY.V+, C.VPHY)
+    net (VPLL.V+, C.VPLL)
+    net (VPHY.V+, C.VPHY)
 
-  topo-net(USB.data.P => C.DP)
-  topo-net(USB.data.N => C.DM)
+    topo-net(USB.data.P => C.DP)
+    topo-net(USB.data.N => C.DM)
 
-  make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
-  make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
+    make-bus-supports(C.ADBUS as Pin, C.ACBUS as Pin, mode-a)
+    make-bus-supports(C.BDBUS as Pin, C.BCBUS as Pin, mode-b)
 
-  ; Wire up the microwire configuration bus
-  net (cfg.cs, C.EECS)
-  net (cfg.clk, C.EECLK)
-  net (cfg.do, C.EEDATA)
+    ; Wire up the microwire configuration bus
+    net (cfg.cs, C.EECS)
+    net (cfg.clk, C.EECLK)
+    net (cfg.do, C.EEDATA)
 
-  ; The REF pin tunes the internal transceiver
-  ;   this resistor sets the current used.
-  insert-resistor(
-    C.REF, GND,
-    resistance = 12.0e3
-    precision = (1 %)
-  )
-
-  ; Setup Bypass Capacitors for Rails
-
-  ; Voltage Margin Relative to the intended voltage.
-  ;  This helps set the minimum voltage range to search.
-  val cap-margin = 2.0
-
-  ; Set a maximum voltage search range for components -
-  ;  this just limits the search range to something reasonable
-  ;  for low voltage devices like this.
-  val max-voltage = 16.0
-
-  val max-rail-V = cap-margin * maximum([VCCIO-V, VCORE-V])
-  if max-rail-V > max-voltage:
-    throw $ ValueError("Invalid Max Voltage Range Configuration: rail-V = %_ < max-V = %_" % [max-rail-V, max-voltage])
-
-  ; See Section 6.2 -
-
-  val bypass-query = add(C-query,
-    case = ["0603", "0805", "1206"]
-    sort! = SortKey(rated-voltage = Increasing)
-    rated-voltage = Interval(max-rail-V, max-voltage)
-  )
-
-  val cap-100nF = create-capacitor(
-      bypass-query,
-      capacitance = 100.0e-9,
-      case = ["0402"]
-  )
-
-  if use-internal-1v8 :
-    ; Use the internal VREG to drive VCORE
-    net (rail-3v3, C.VREGIN)
-    val C-in = insert-bypass(C.VREGIN, GND, elem-type = cap-100nF)
-
-    net (rail-1v8, C.VREGOUT)
-    symbol(rail-1v8) = PWR-SYMB
-
-    val cap-3u3 = create-capacitor(
-      bypass-query,
-      capacitance = 3.3e-6
+    ; The REF pin tunes the internal transceiver
+    ;   this resistor sets the current used.
+    insert-resistor(
+      C.REF, GND,
+      R-query,
+      resistance = 12.0e3
+      precision = (1 %)
     )
-    val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-3u3)
-    schematic-group([C-in, C-out]) = VREG-caps
 
-  ; Rail Bypass Capacitors
-  for p in ports(C.VCORE) do :
-    val c = insert-bypass(p, GND, elem-type = cap-100nF)
-    schematic-group(c) = bypass-caps
+    ; Setup Bypass Capacitors for Rails
 
-  for p in ports(C.VCCIO) do :
-    val c = insert-bypass(p, GND, elem-type = cap-100nF)
-    schematic-group(c) = bypass-caps
+    ; Voltage Margin Relative to the intended voltage.
+    ;  This helps set the minimum voltage range to search.
+    val cap-margin = 2.0
 
-  val cap-4u7 = Elem $ create-capacitor(
-    bypass-query,
-    capacitance = 4.7e-6,
-  )
+    ; Set a maximum voltage search range for components -
+    ;  this just limits the search range to something reasonable
+    ;  for low voltage devices like this.
+    val max-voltage = 16.0
 
-  val bypass-circ = create-circuit(cap-4u7 | Elem(cap-100nF))
-  insert-bypass(C.VPHY, GND, elem-type = bypass-circ)
-  insert-bypass(C.VPLL, GND, elem-type = bypass-circ)
+    val max-rail-V = cap-margin * maximum([VCCIO-V, VCORE-V])
+    if max-rail-V > max-voltage:
+      throw $ ValueError("Invalid Max Voltage Range Configuration: rail-V = %_ < max-V = %_" % [max-rail-V, max-voltage])
+
+    ; See Section 6.2 -
+
+    val bypass-query = add(C-query,
+      case = ["0603", "0805", "1206"]
+      sort! = SortKey(rated-voltage = Increasing)
+      rated-voltage = Interval(max-rail-V, max-voltage)
+    )
+
+    val cap-100nF = create-capacitor(
+        bypass-query,
+        capacitance = 100.0e-9,
+        case = ["0402"]
+    )
+
+    if use-internal-1v8 :
+      ; Use the internal VREG to drive VCORE
+      net (rail-3v3, C.VREGIN)
+      val C-in = insert-bypass(C.VREGIN, GND, elem-type = cap-100nF)
+
+      net (rail-1v8, C.VREGOUT)
+      symbol(rail-1v8) = PWR-SYMB
+
+      val cap-3u3 = create-capacitor(
+        bypass-query,
+        capacitance = 3.3e-6
+      )
+      val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-3u3)
+      schematic-group([C-in, C-out]) = VREG-caps
+
+    ; Rail Bypass Capacitors
+    for p in ports(C.VCORE) do :
+      val c = insert-bypass(p, GND, elem-type = cap-100nF)
+      schematic-group(c) = bypass-caps
+
+    for p in ports(C.VCCIO) do :
+      val c = insert-bypass(p, GND, elem-type = cap-100nF)
+      schematic-group(c) = bypass-caps
+
+    val cap-4u7 = Elem $ create-capacitor(
+      bypass-query,
+      capacitance = 4.7e-6,
+    )
+
+    val bypass-circ = create-circuit(cap-4u7 | Elem(cap-100nF))
+    insert-bypass(C.VPHY, GND, elem-type = bypass-circ)
+    insert-bypass(C.VPLL, GND, elem-type = bypass-circ)
+
+  ; Returned Object for `device`
+  device-int
 
 defn make-bus-supports (bus-d:Pin, bus-c:Pin, mode:FT2232H-Mode) -> False :
   switch(mode) :
