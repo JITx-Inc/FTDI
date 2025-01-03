@@ -234,15 +234,12 @@ public defn device (
     ; See Section 6.2 -
 
     val bypass-query = add(C-query,
-      case = ["0603", "0805", "1206"]
-      sort! = SortKey(rated-voltage = Increasing)
       rated-voltage = Interval(max-rail-V, max-voltage)
     )
 
     val cap-100nF = create-capacitor(
         bypass-query,
         capacitance = 100.0e-9,
-        case = ["0402"]
     )
 
     if use-internal-1v8 :
@@ -253,11 +250,11 @@ public defn device (
       net (rail-1v8, C.VREGOUT)
       symbol(rail-1v8) = PWR-SYMB
 
-      val cap-3u3 = create-capacitor(
+      val cap-4u7 = create-capacitor(
         bypass-query,
-        capacitance = 3.3e-6
+        capacitance = 4.7e-6
       )
-      val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-3u3)
+      val C-out = insert-bypass(C.VREGOUT, GND, elem-type = cap-4u7)
       schematic-group([C-in, C-out]) = VREG-caps
 
     ; Rail Bypass Capacitors
